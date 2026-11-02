@@ -1,0 +1,183 @@
+	REGISTERS IN RV32E
+
+x0		zero	constant value 0
+x1		ra		return address				
+x2		sp		stack pointer
+x3		gp		global pointer
+x4		tp		thread pointer
+x5		t0		temporary register
+x6		t1		temporary register
+x7		t2		temporary register
+x8		s0/fp	saved register/frame pointer
+x9		s1		saved register
+x10		a0		function argument/return value		
+x11		a1		function argument/return value
+x12		a2		function argument
+x13		a3		function argument
+x14		a4		function argument
+x15		a5		function argument
+
+
+
+	LOAD
+
+1w s7, 8(zero) 		# s7 = data at memory address (zero +8)
+
+# lh is load half (16) and lb is load byte. lbu loads unsigned byte (for ascii)
+
+
+	STORE
+
+addi t3, zero, 42 	# t3= 42
+sw t3, 20(zero) 	# data value at memory address 20 =42
+
+
+	PC (PROGRAM COUNTER)
+
+The program counter-also called the PC-keeps track of the current instruction.
+The PC holds the memory address of the current instruction and increments by four 
+after each instruction completes so that the processor can read or fetch the next 
+instruction from memory.
+
+
+	LOGICAL INSTRUCTIONS
+
+AND		instruction is useful for clearing or masking bits 
+		(i.e., forcing bits to 0).
+
+OR		instruction is useful for combining bitfields from two registers.
+		It can also be used to set bits in a register (i.e., force a bit to 1).
+
+XORI	can perform logical NOT operation. xori t1, t0, -1  will inwert all the
+		the bits in t0. remember that -1 is 0xFFFFFFFF (all 1’s). t1 will get the 
+		one's complement of t0.
+
+
+	SHIFT INSTRUCTIONS
+
+Shift instructions shift the value in a register left or right, dropping bits
+off the end. RISC-V shift operations are s11 (shift left logical), sr1 (shift
+right logical), and sra (shift right arithmetic). As discussed in Section
+5.2.5, left shifts always fill the least significant bits with zeros. However,
+right shifts can be either logical (zeros shift into the most significant bits)
+or arithmetic (the sign bit shifts into the most significant bits). These
+shifts specify the shift amount in the second source register. Immediate
+versions of each instruction are also available (slli, srli, and srai),
+where the amount to shift is specified by a 5-bit unsigned immediate.
+
+As discussed in Section 5.2.5, shifting a value left by N is equivalent
+to multiplying it by 2N. For example, slli s0, s0, 3 multiplies s0 by 8
+(i.e., 23). Likewise, shifting a value right by N is equivalent to dividing it
+by 2. Arithmetic right shifts divide two's complement numbers, while
+logical right shifts divide unsigned numbers.
+Logical shifts are also used with and and or instructions to extract
+or assemble bitfields. For example, the following code extracts bits 15:8
+from s7 and places them in the lower byte of s6. If s7 is 0x1234ABCD,
+then s6 will be 0xAB after this code completes.
+
+srli s6, s7, 8
+andi s6, s6, OXFF
+
+
+	BRANCHING
+
+add later
+
+
+	LOOPS
+
+also add later
+
+
+	ARRAYS
+
+For ease of storage and access, similar data can be grouped together into
+an array. An array stores its contents at sequential addresses in memory.
+Each array element is identified by a number called its index. The number 
+of elements in the array is called the length of the array. The address of 
+the 0th element of an array is called the array's base address.
+
+
+	FUNCTION CALLS
+
+In RISC-V programs, the caller conventionally places up to eight (six in RV32E) 
+arguments in registers a0 to a7 (a5 in RV32E) before making the function call, 
+and the callee places the return value in register a0 before finishing.
+
+The caller stores the return address in the return address register ra at
+the same time it jumps to the callee using the jump and link instruction
+(ja1). The callee must not overwrite any architectural state or memory
+that the caller is depending on. Specifically, the callee must leave the
+saved registers (s0-s11), the return address (ra), and the stack, a portion
+of memory used for temporary variables, unmodified.
+
+
+JAL and JR
+
+RISC-V uses the jump and link instruction (jal) to call a function and the 
+jump register instruction (jr) to return from a function.
+
+Let's say we have a main function at the address 0x00000140 and a function
+called sound-init at 0x00000545. jal sound-init performs two tasks: it jumps to the 
+target instruction at 0x00000545 and it stores the return address to ra register. 
+
+The programmer can specify which register gets written with the return address, but 
+the default is ra. 
+
+The preferred style is:		jal ra, sound-init
+
+The sound-init returns by executing  jr ra 	the main function continues at 0x00000144
+
+The instruction address
+of the currently executing
+instruction is held in PC,
+the program counter. So, the
+following instruction address
+is referred to as PС+4.
+
+
+	STACK
+
+RISC-V stack grows down in memory.
+The stack pointer, sp (register 2), is an ordinary RISC-V register that, by convention, 
+points to the top of the stack. A pointer is a fancy name for a memory address.  
+
+One of the important uses of the stack is to save and restore registers that are used 
+by a function. Recall that a function should calculate a return value but have no other 
+unintended side effects. In particular, a function should not modify any registers 
+besides a0, the one containing the return value. 
+
+To solve this problem, a function saves registers on the stack before
+it modifies them and then restores them from the stack before it returns.
+Specifically, it performs the following steps:
+
+1. Makes space on the stack to store the values of one or more registers
+2. Stores the values of the registers on the stack
+3. Executes the function using the registers
+4. Restores the original values of the registers from the stack
+5. Deallocates space on the stack
+
+
+Saving a register value on
+the stack is called pushing
+a register onto the stack.
+Restoring the register value
+from the stack is called
+popping a register off of the
+stack.
+
+The preserved registers are s0 to s11 (s1 in RV32E) hence their name, saved, sp, and ra. 
+
+The nonpreserved registers, also called scratch registers, are t0
+to t6 (t2 in RV32E) hence their name, temporary and a0 to a7 (a5), argument registers. 
+
+A function can change the nonpreserved registers freely but must save and restore any
+of the preserved registers that it uses. Because a callee function may freely change 
+any nonpreserved registers, the caller must save any nonpreserved registers containing 
+essential information before making a function call and then restore these registers 
+afterward. For these reasons, preserved registers are also called callee-saved 
+and nonpreserved registers are called caller-saved.
+
+The convention of which registers are preserved or not preserved is part of the standard
+calling convention² for the RISC-V Architecture, instead of being part of the 
+architecture itself.
