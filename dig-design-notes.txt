@@ -181,3 +181,41 @@ and nonpreserved registers are called caller-saved.
 The convention of which registers are preserved or not preserved is part of the standard
 calling convention² for the RISC-V Architecture, instead of being part of the 
 architecture itself.
+
+
+LEAF AND NONLEAF FUNCTIONS
+
+A function that does not call other functions is called a leaf function;
+diffofsums is an example. A function that does call others is called a
+nonleaf function. Nonleaf functions are somewhat more complicated
+because they may need to save nonpreserved registers on the stack
+before they call another function and then restore those registers afterward. Specifically, they must follow these rules:
+
+
+	Caller save rule: Before a function call, the caller must save any
+	nonpreserved registers (t0-t6 and a0-a7) that it needs after the
+	call. After the call, it must restore these registers before using them.
+
+	Callee save rule: Before a callee disturbs any of the preserved
+	registers (s0-s11 and ra), it must save the registers. Before it
+	returns, it must restore these registers.
+
+
+A nonleaf function overwrites
+ra when it calls another
+function using jal. Thus, a
+nonleaf function must always
+save ra on its stack and
+restore it before returning.
+
+Example of nonleaf function call in assembly on pg. 350
+
+
+	RECURSIVE FUNCTION CALLS
+
+A recursive function is a nonleaf function that calls itself. Recursive
+functions behave as both caller and callee and must save both preserved
+and nonpreserved registers.
+
+
+
